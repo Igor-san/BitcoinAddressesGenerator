@@ -1,0 +1,14 @@
+E:\MyDocuments\VS2017\BitcoinAddressesGenerator\BitcoinAddressesGenerator\bin\Release\BitcoinAddressesGenerator.exe.config
+E:\MyDocuments\VS2017\BitcoinAddressesGenerator\BitcoinAddressesGenerator\bin\Release\BitcoinAddressesGenerator.exe
+E:\MyDocuments\VS2017\BitcoinAddressesGenerator\BitcoinAddressesGenerator\bin\Release\BitcoinAddressesGenerator.pdb
+E:\MyDocuments\VS2017\BitcoinAddressesGenerator\BitcoinAddressesGenerator\bin\Release\BouncyCastle.Crypto.dll
+E:\MyDocuments\VS2017\BitcoinAddressesGenerator\BitcoinAddressesGenerator\bin\Release\NBitcoin.dll
+E:\MyDocuments\VS2017\BitcoinAddressesGenerator\BitcoinAddressesGenerator\bin\Release\NBitcoin.pdb
+E:\MyDocuments\VS2017\BitcoinAddressesGenerator\BitcoinAddressesGenerator\bin\Release\NBitcoin.xml
+E:\MyDocuments\VS2017\BitcoinAddressesGenerator\BitcoinAddressesGenerator\obj\Release\RandomText.FormMain.resources
+E:\MyDocuments\VS2017\BitcoinAddressesGenerator\BitcoinAddressesGenerator\obj\Release\BitcoinAddressesGenerator.Properties.Resources.resources
+E:\MyDocuments\VS2017\BitcoinAddressesGenerator\BitcoinAddressesGenerator\obj\Release\BitcoinAddressesGenerator.csproj.GenerateResource.cache
+E:\MyDocuments\VS2017\BitcoinAddressesGenerator\BitcoinAddressesGenerator\obj\Release\BitcoinAddressesGenerator.csproj.CoreCompileInputs.cache
+E:\MyDocuments\VS2017\BitcoinAddressesGenerator\BitcoinAddressesGenerator\obj\Release\BitcoinAddressesGenerator.csproj.CopyComplete
+E:\MyDocuments\VS2017\BitcoinAddressesGenerator\BitcoinAddressesGenerator\obj\Release\BitcoinAddressesGenerator.exe
+E:\MyDocuments\VS2017\BitcoinAddressesGenerator\BitcoinAddressesGenerator\obj\Release\BitcoinAddressesGenerator.pdb
