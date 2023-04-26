@@ -1,4 +1,10 @@
-﻿using System.Reflection;
+﻿/*
+30.03.2023 вер.1.2 - обновление NBitcoin v.7.0.25.0
+24.04.2023 вер.1.3 - можно сжатый ключ и выводить segwit и segwitP2SH  и Net Framework 4.8
+26.04.2023 вер.1.4 - сохранение в файл вместо вывода в поле, убраны отдельные списки адресов и ключей
+ * */
+
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -32,5 +38,5 @@ using System.Runtime.InteropServices;
 // Можно задать все значения или принять номер построения и номер редакции по умолчанию, 
 // используя "*", как показано ниже:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("1.1.0.0")]
-[assembly: AssemblyFileVersion("1.1.0.0")]
+[assembly: AssemblyVersion("1.4.0.0")]
+[assembly: AssemblyFileVersion("1.4.0.0")]

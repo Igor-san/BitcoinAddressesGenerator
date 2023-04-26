@@ -1,18 +1,16 @@
-﻿using Casascius.Bitcoin;
+﻿using BitcoinAddressesGenerator.Classes;
 using NBitcoin;
 using System;
-using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data;
-using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace RandomText
+namespace BitcoinAddressesGenerator
 {
     public partial class FormMain : Form
     {
@@ -21,29 +19,31 @@ namespace RandomText
         private string BatchWorkTip = ""; //описание текущей долгой операции
 
         Control DisabledControl;
-        DataGridView DisabledGrid;
+
+        Network CurrentNetwork = Network.Main;
+
+        public ProgramSettings CurrentSettings = null;
 
         public FormMain()
         {
             InitializeComponent();
         }
 
-        private void ErrorMessage(string p)
+        private void FormMain_Load(object sender, EventArgs e)
         {
-            try
-            {
-              if (textBoxLog!=null)  textBoxLog.AppendText("Error: " + p + Environment.NewLine);
-            }
-            catch { }
+            LoadSettings();
+
+            this.Text += " " + Assembly.GetEntryAssembly().GetName().Version.ToString();
+
+        }
+        private void ErrorMessage(string msg)
+        {
+            textBoxLog.AppendText("Error: " + msg + Environment.NewLine);
         }
 
-        private void StatusMessage(string p)
+        private void StatusMessage(string msg)
         {
-            try
-            {
-            if (textBoxLog != null) textBoxLog.AppendText("Info: " + p + Environment.NewLine);
-                        }
-            catch { }
+            textBoxLog.AppendText("Info: " + msg + Environment.NewLine);
         }
 
         /// <summary>
@@ -51,9 +51,8 @@ namespace RandomText
         /// </summary>
         /// <param name="startTime"></param>
         /// <param name="control"></param>
-        /// <param name="grid"></param>
         /// <returns></returns>
-        private bool StartQuery(out DateTime startTime, string workTip = "", Control control = null, DataGridView grid = null)
+        private bool StartQuery(out DateTime startTime, string workTip = "", Control control = null)
         {
             startTime = DateTime.Now;
 
@@ -70,16 +69,17 @@ namespace RandomText
             BatchWork = true;
 
             DisabledControl = control;
-            DisabledGrid = grid;
+
 
             if (DisabledControl != null)
+            {
                 DisabledControl.Enabled = false;
-            if (DisabledGrid != null)
-                DisabledGrid.SuspendLayout();
+            }
+
 
             buttonStop.Focus();
             buttonStop.Select();
-           
+
             return true;
         }
 
@@ -94,9 +94,9 @@ namespace RandomText
             BatchWorkTip = "";
 
             if (DisabledControl != null)
+            {
                 DisabledControl.Enabled = true;
-            if (DisabledGrid != null)
-                DisabledGrid.ResumeLayout();
+            }
 
             DateTime dtEnd = DateTime.Now;
 
@@ -110,15 +110,15 @@ namespace RandomText
             buttonStop.Enabled = !enable;
         }
 
-        private void button1_Click(object sender, EventArgs e)
+        private void buttonGenerateText_Click(object sender, EventArgs e)
         {
             DateTime dtStart;
-            if (!StartQuery(out dtStart)) return; 
+            if (!StartQuery(out dtStart)) return;
             try
             {
-                int count = (int)numericUpDown1.Value;
+                int count = (int)numericUpDownGenerationCount.Value;
 
-                StringBuilder sb=new StringBuilder();
+                StringBuilder sb = new StringBuilder();
 
                 for (int i = 0; i < count; i++)
                 {
@@ -130,7 +130,7 @@ namespace RandomText
             }
             catch (Exception ex)
             {
-                ErrorMessage("button1_Click" + ex.Message);
+                ErrorMessage("buttonGenerateText_Click" + ex.Message);
             }
             finally
             {
@@ -152,15 +152,15 @@ namespace RandomText
 
         private void buttonOpen_Click(object sender, EventArgs e)
         {
-             DateTime dtStart;
-            if (!StartQuery(out dtStart)) return; 
+            DateTime dtStart;
+            if (!StartQuery(out dtStart)) return;
             try
             {
 
 
-                textBoxText.Text=System.IO.File.ReadAllText(textBoxSaveTo.Text.Trim());
+                textBoxText.Text = System.IO.File.ReadAllText(textBoxSaveTo.Text.Trim());
 
-                StatusMessage("Загружено "+textBoxText.Lines.Count()+" линий");
+                StatusMessage("Загружено " + textBoxText.Lines.Count() + " линий");
             }
             catch (Exception ex)
             {
@@ -171,7 +171,7 @@ namespace RandomText
                 FinallyQueryWork(dtStart);
                 EnableControls(true);
             }
-       
+
         }
 
         #region ProgressBar
@@ -181,7 +181,7 @@ namespace RandomText
         private void buttonStop_Click(object sender, EventArgs e)
         {
 
-                StopProcess = true;
+            StopProcess = true;
 
         }
 
@@ -276,46 +276,129 @@ namespace RandomText
                 cts.Cancel();
             }
         }
+        private (string privateKeyString, string address) CreateKeyAddress(bool isCompressed, bool isSegwit, bool isSegwitP2SH, string delem)
+        {
+            var privateKey = new Key(isCompressed);
+
+            var bitcoinPrivateKey = privateKey.GetWif(CurrentNetwork);
+            string address = bitcoinPrivateKey.GetAddress(ScriptPubKeyType.Legacy).ToString();
+
+            if (isSegwit)
+            {
+                address += delem + bitcoinPrivateKey.GetAddress(ScriptPubKeyType.Segwit).ToString();
+            }
+            if (isSegwitP2SH)
+            {
+                address += delem + bitcoinPrivateKey.GetAddress(ScriptPubKeyType.SegwitP2SH).ToString();
+            }
+
+            return (bitcoinPrivateKey.ToString(), address);
+        }
+
+        private string CreateKeyAddresses(bool isCompressed, bool isUnCompressed, bool isSegwit, bool isSegwitP2SH, string delem)
+        {
+            string privateKeys= "";
+            string addresses = "";
+
+            if (isCompressed && isUnCompressed) //вернем с переносом в StringBuilder
+            {
+                (string keys1, string addr1) = CreateKeyAddress(true, isSegwit, isSegwitP2SH, delem);
+                string s1 = String.Format("{0}{2}{1}", keys1, addr1, delem);
+
+                (string keys2, string addr2) = CreateKeyAddress(false, isSegwit, isSegwitP2SH, delem);
+                string s2 = String.Format("{0}{2}{1}", keys2, addr2, delem);
+
+                return s1+ "\r\n" + s2;
+
+            } else if (isCompressed)
+            {
+                (privateKeys, addresses) = CreateKeyAddress(true, isSegwit, isSegwitP2SH, delem);
+
+
+            } else
+            {
+                (privateKeys, addresses) = CreateKeyAddress(false, isSegwit, isSegwitP2SH, delem);
+            }
+
+            return String.Format("{0}{2}{1}", privateKeys, addresses, delem);
+
+        }
         private void buttonGenerateRandom_Click(object sender, EventArgs e)
         {
             DateTime dtStart;
             if (!StartQuery(out dtStart)) return;
+
+            StreamWriter flushFile = null;
+            StringBuilder sb = new StringBuilder();
+
             try
             {
-                int count = (int)numericUpDown1.Value;
+
+                int count = (int)numericUpDownGenerationCount.Value;
+
+                int flushEveryCount = (int)numericUpDownFlushEveryCount.Value;
+
+                bool flushToFile =  checkBoxFlushFile.Checked;
+
+                if (flushToFile)
+                {
+                    //будем сбрасывать содержимое stringBuilder в файл
+                     flushFile = new StreamWriter(textBoxResultsFlushFile.Text.Trim(), true, Encoding.ASCII);
+                }
+
 
                 StartLoopProcess(true);
 
-                StringBuilder sb=new StringBuilder();
-
-                string delem= textBoxDelimiter.Text;
+                string delem = textBoxDelimiter.Text;
 
                 ProgressBarCounter = 0;
                 timerThread.Start();
 
+                bool segwit = checkBoxSegwit.Checked;
+                bool segwitP2SH = checkBoxSegwitP2SH.Checked;
+
+                bool isUnCompressed = radioButtonUnCompressedKey.Checked;
+                bool isCompressed = radioButtonCompressedKey.Checked;
+
+                if (radioButtonBothKey.Checked)
+                {
+                    isUnCompressed = true;
+                    isCompressed = true;
+                }
+
+
                 cts = new CancellationTokenSource();
                 ParallelOptions po = new ParallelOptions()
                 {
-                    MaxDegreeOfParallelism = 8,
+                    MaxDegreeOfParallelism = (int)numericUpDownProcessCount.Value,
                     CancellationToken = cts.Token,
                 };
                 try
                 {
+                    RandomUtils.Random = new UnsecureRandom();
+
                     Parallel.For(0, count, po, (i, pls1) =>
                     {
-                        var network = Network.Main;
-
                         RandomUtils.AddEntropy(RandomString(100));
-                        var nsaProofKey = new Key();
-                        var privateKey = new Key();
-                        var bitcoinPrivateKey = privateKey.GetWif(network);
-                        var address = bitcoinPrivateKey.GetAddress();
-                        var publicKey = bitcoinPrivateKey.PubKey;
+
+                        string stroke = CreateKeyAddresses(isCompressed: isCompressed, isUnCompressed: isUnCompressed, isSegwit: segwit, isSegwitP2SH: segwitP2SH, delem: delem);
+
                         lock (sb)
                         {
-                            sb.AppendFormat("{0}{3}{1}{3}{2}", bitcoinPrivateKey, address, publicKey, delem);
-                            sb.AppendLine();
-                            Interlocked.Increment(ref ProgressBarCounter);
+
+                            sb.AppendLine(stroke);
+
+                            ProgressBarCounter++;
+
+                            if (flushToFile && (ProgressBarCounter % flushEveryCount == 0))
+                            {
+                                flushFile.Write(sb.ToString());
+                                flushFile.Flush();
+                                sb.Clear();
+
+                            }
+
+
                         }
 
                         Application.DoEvents();
@@ -324,27 +407,33 @@ namespace RandomText
                             pls1.Stop();
                         }
 
-                    }); 
+                    });
                 }
                 catch (OperationCanceledException ex)
                 {
                     StartProcess(false, 0);
                     StatusMessage("Запрошена отмена потоков: " + ex.Message);
-                    return ;
-
+                    return;
                 }
 
                 timerThread.Stop();
 
-                textBoxText.Text=sb.ToString();
+                textBoxText.Text = sb.ToString();
                 StatusMessage("Обработано " + count + " строк");
             }
             catch (Exception ex)
             {
-                ErrorMessage("buttonGenerateRandom_Click" + ex.Message);
+                ErrorMessage($"buttonGenerateRandom_Click: {ex.Message} -> {ex.InnerException.Message}");
             }
             finally
             {
+                if (flushFile != null)
+                {
+                    //сбросим остатки sb
+                   flushFile.Write(sb.ToString());
+                   flushFile.Close();
+                }
+
                 StartLoopProcess(false);
                 FinallyQueryWork(dtStart);
                 EnableControls(true);
@@ -355,19 +444,43 @@ namespace RandomText
         {
             DateTime dtStart;
             if (!StartQuery(out dtStart)) return;
+
+            StreamWriter flushFile = null;
+            StringBuilder sb = new StringBuilder();
+
             try
             {
 
-                if  (!File.Exists(textBoxSaveTo.Text.Trim()))
+                if (!File.Exists(textBoxSaveTo.Text.Trim()))
                 {
-                    ErrorMessage("файл "+textBoxSaveTo.Text.Trim()+" не найден");
+                    ErrorMessage("файл " + textBoxSaveTo.Text.Trim() + " не найден");
                     return;
                 }
+
+                int flushEveryCount = (int)numericUpDownFlushEveryCount.Value;
+
+                bool flushToFile = checkBoxFlushFile.Checked;
+
+                if (flushToFile)
+                {
+                    //будем сбрасывать содержимое stringBuilder в файл
+                    flushFile = new StreamWriter(textBoxResultsFlushFile.Text.Trim(), true, Encoding.ASCII);
+                }
+
                 StartLoopProcess(true);
 
                 string delem = textBoxDelimiter.Text;
+                bool segwit = checkBoxSegwit.Checked;
+                bool segwitP2SH = checkBoxSegwitP2SH.Checked;
 
-                StringBuilder sb=new StringBuilder();
+                bool isUnCompressed = radioButtonUnCompressedKey.Checked;
+                bool isCompressed = radioButtonCompressedKey.Checked;
+
+                if (radioButtonBothKey.Checked)
+                {
+                    isUnCompressed = true;
+                    isCompressed = true;
+                }
 
                 int count = 0;
 
@@ -377,51 +490,54 @@ namespace RandomText
                 cts = new CancellationTokenSource();
                 ParallelOptions po = new ParallelOptions()
                 {
-                    MaxDegreeOfParallelism = 8,
+                    MaxDegreeOfParallelism = (int)numericUpDownProcessCount.Value,
                     CancellationToken = cts.Token,
                 };
                 try
                 {
+                    RandomUtils.Random = new UnsecureRandom();
 
                     Parallel.ForEach(File.ReadLines(textBoxSaveTo.Text.Trim()), po, (line, state) =>
                     {
                         if (line.Trim() != String.Empty)
                         {
-                            var network = Network.Main;
-
                             RandomUtils.AddEntropy(line.Trim());
-                            var nsaProofKey = new Key();
-                            var privateKey = new Key();
-                            var bitcoinPrivateKey = privateKey.GetWif(network);
-                            var address = bitcoinPrivateKey.GetAddress();
+
+                            string stroke = CreateKeyAddresses(isCompressed: isCompressed, isUnCompressed: isUnCompressed, isSegwit: segwit, isSegwitP2SH: segwitP2SH, delem: delem);
 
                             lock (sb)
                             {
-                                sb.AppendFormat("{0}{2}{1}", bitcoinPrivateKey, address, delem);
-                                sb.AppendLine();
-                                count++;
-                                Interlocked.Increment(ref ProgressBarCounter);
-                            }
 
-                        }
-                            Application.DoEvents();
-                            if (StopProcess)
-                            {
-                                state.Stop();
+                                sb.AppendLine(stroke);
+
+                                ProgressBarCounter++;
+
+                                if (flushToFile && (ProgressBarCounter % flushEveryCount == 0))
+                                {
+                                    flushFile.Write(sb.ToString());
+                                    flushFile.Flush();
+                                    sb.Clear();
+                                }
                             }
-                        
+                        }
+                        Application.DoEvents();
+                        if (StopProcess)
+                        {
+                            state.Stop();
+                        }
+
                     });
 
                 }
                 catch (OperationCanceledException ex)
                 {
-                    StartProcess(false, 0); 
+                    StartProcess(false, 0);
                     StatusMessage("Запрошена отмена потоков: " + ex.Message);
                     return;
 
                 }
 
-               
+
                 textBoxText.Text = sb.ToString();
                 StatusMessage("Обработано " + count + " линий");
             }
@@ -431,36 +547,44 @@ namespace RandomText
             }
             finally
             {
+                if (flushFile != null)
+                {
+                    //сбросим остатки sb
+                    flushFile.Write(sb.ToString());
+                    flushFile.Close();
+                }
+
                 StartLoopProcess(false);
                 FinallyQueryWork(dtStart);
                 EnableControls(true);
             }
         }
 
-        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
+        private void FormMain_FormClosing(object sender, FormClosingEventArgs e)
         {
             if (BatchWork)
             {
                 DialogResult res = MessageBox.Show("Некоторые процессы еще выполняются. Вы действительно хотите выйти из программы, не ожидая их нормальног прекращения?", "Есть запущенные процессы", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2);
                 if (res == DialogResult.No)
                 {
-                    e.Cancel = true; 
+                    e.Cancel = true;
                 }
 
             }
             if (!e.Cancel)
             {
-                CancelAllThreads(); 
+                CancelAllThreads();
             }
+
+            SaveSettings();
         }
 
         private void linkLabel1_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
-            try{
-
-
-            System.Diagnostics.Process.Start("https://upad.ru");
-                        }
+            try
+            {
+                System.Diagnostics.Process.Start("https://upad.ru");
+            }
             catch (Exception ex)
             {
                 ErrorMessage("linkLabel1_LinkClicked" + ex.Message);
@@ -473,10 +597,11 @@ namespace RandomText
             dlg.Title = "Укажите файл ...";
             dlg.Filter = "Txt Files (*.txt)|*.txt|All Files (*.*)|*.*";
             dlg.ValidateNames = false;
+            dlg.CheckFileExists = false;
 
             if (dlg.ShowDialog() == DialogResult.OK)
             {
-                textBoxSaveTo.Text=(dlg.FileName);
+                textBoxSaveTo.Text = (dlg.FileName);
             }
         }
 
@@ -496,30 +621,139 @@ namespace RandomText
                 File.WriteAllText(dlg.FileName, textBoxText.Text);
             }
         }
-      
-        /*
-        private void GenerateKeys(string seed)
+
+        private void buttonSaveAllToFile_Click(object sender, EventArgs e)
+        {
+            SaveFileDialog dlg = new SaveFileDialog();
+            #region Set Save Dialog Properties
+
+            dlg.AddExtension = true;
+            dlg.Title = "Сохранить результат как...";
+            dlg.Filter = "Txt Files (*.txt)|*.txt|All Files (*.*)|*.*";
+            dlg.OverwritePrompt = true;
+            #endregion
+
+            if (dlg.ShowDialog() == DialogResult.OK)
+            {
+                File.WriteAllText(dlg.FileName, textBoxText.Text);
+            }
+        }
+
+        private void buttonSelectFlushFile_Click(object sender, EventArgs e)
+        {
+            OpenFileDialog dlg = new OpenFileDialog();
+            dlg.Title = "Укажите файл ...";
+            dlg.Filter = "Txt Files (*.txt)|*.txt|All Files (*.*)|*.*";
+            dlg.ValidateNames = false;
+            dlg.CheckFileExists = false;
+
+            if (dlg.ShowDialog() == DialogResult.OK)
+            {
+                textBoxResultsFlushFile.Text = (dlg.FileName);
+            }
+        }
+        private void checkBoxFlushFile_CheckedChanged(object sender, EventArgs e)
+        {
+            if (checkBoxFlushFile.Checked)
+            {
+                textBoxResultsFlushFile.Enabled = true;
+                buttonSelectFlushFile.Enabled = true;
+            }
+            else
+            {
+                textBoxResultsFlushFile.Enabled = false;
+                buttonSelectFlushFile.Enabled = false;
+            }
+        }
+
+        private void LoadSettings()
         {
             try
             {
+                string configFile = Path.Combine(Application.StartupPath, Constants.SettingsName);
 
-                KeyPair privateKey = KeyPair.Create(seed, false, 0); // а это из Bitcoin-Address-Utility-master
-                var bitcoinPrivateKey = privateKey.PrivateKeyBase58;
-                var address = new AddressBase(privateKey, 0).AddressBase58;
+                if (File.Exists(configFile))
+                {
+                    CurrentSettings = ProgramSettings.Load(configFile);
+                }
+                else
+                {
+                    CurrentSettings = new ProgramSettings(configFile);
+                }
+
+                if (CurrentSettings.ProcessCount <= 0)
+                {
+                    CurrentSettings.ProcessCount = Environment.ProcessorCount; //число процессоров
+                    numericUpDownProcessCount.Value = CurrentSettings.ProcessCount;
+                }
 
 
+                numericUpDownGenerationCount.Value = CurrentSettings.GenerationCount;
+
+                textBoxDelimiter.Text = CurrentSettings.Delimiter;  //Разделитель, может содержать пробелы
+
+                textBoxSaveTo.Text = CurrentSettings.RandomStringsFile;
+
+                textBoxResultsFlushFile.Text = CurrentSettings.ResultsFlushFile;
+
+                checkBoxFlushFile.Checked = CurrentSettings.ResultsFlush;
+
+                checkBoxSegwit.Checked = CurrentSettings.Segwit;
+
+                checkBoxSegwitP2SH.Checked = CurrentSettings.SegwitP2SH;
+
+                radioButtonUnCompressedKey.Checked = CurrentSettings.UnCompressedKey;
+
+                radioButtonCompressedKey.Checked = CurrentSettings.CompressedKey;
+
+                radioButtonBothKey.Checked = CurrentSettings.BothKey;
+
+                numericUpDownFlushEveryCount.Value = CurrentSettings.FlushEveryCount;
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage("LoadSettings: " + ex.Message);
+            }
+        }
+
+        private void SaveSettings()
+        {
+            try
+            {
+                CurrentSettings.ProcessCount = (int)numericUpDownProcessCount.Value;
+
+                CurrentSettings.GenerationCount = (int)numericUpDownGenerationCount.Value;
+
+                CurrentSettings.Delimiter = textBoxDelimiter.Text; //Разделитель, может содержать пробелы
+
+                CurrentSettings.RandomStringsFile = textBoxSaveTo.Text;
+
+                CurrentSettings.ResultsFlushFile = textBoxResultsFlushFile.Text;
+
+                CurrentSettings.ResultsFlush = checkBoxFlushFile.Checked;
+
+                CurrentSettings.Segwit = checkBoxSegwit.Checked;
+
+                CurrentSettings.SegwitP2SH = checkBoxSegwitP2SH.Checked;
+
+                CurrentSettings.UnCompressedKey = radioButtonUnCompressedKey.Checked;
+
+                CurrentSettings.CompressedKey = radioButtonCompressedKey.Checked;
+
+                CurrentSettings.BothKey = radioButtonBothKey.Checked;
+
+                CurrentSettings.FlushEveryCount = (int) numericUpDownFlushEveryCount.Value;
+
+                CurrentSettings.Save();
 
             }
             catch (Exception ex)
             {
-                ErrorMessage("GenerateKeys("+seed+"):" + ex.Message);
-                return;
-            }
-            finally
-            {
-
+                ErrorMessage("SaveSettings: " + ex.Message);
             }
         }
-        */
+
+
+
     }
 }
