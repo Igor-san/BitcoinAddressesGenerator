@@ -67,6 +67,8 @@
             this.radioButtonCompressedKey = new System.Windows.Forms.RadioButton();
             this.radioButtonUnCompressedKey = new System.Windows.Forms.RadioButton();
             this.label1 = new System.Windows.Forms.Label();
+            this.checkBoxWIFKey = new System.Windows.Forms.CheckBox();
+            this.checkBoxHexPrivateKey = new System.Windows.Forms.CheckBox();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDownGenerationCount)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDownProcessCount)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDownFlushEveryCount)).BeginInit();
@@ -229,7 +231,7 @@
             // checkBoxSegwitP2SH
             // 
             this.checkBoxSegwitP2SH.AutoSize = true;
-            this.checkBoxSegwitP2SH.Location = new System.Drawing.Point(218, 85);
+            this.checkBoxSegwitP2SH.Location = new System.Drawing.Point(254, 90);
             this.checkBoxSegwitP2SH.Name = "checkBoxSegwitP2SH";
             this.checkBoxSegwitP2SH.Size = new System.Drawing.Size(86, 17);
             this.checkBoxSegwitP2SH.TabIndex = 48;
@@ -240,7 +242,7 @@
             // checkBoxSegwit
             // 
             this.checkBoxSegwit.AutoSize = true;
-            this.checkBoxSegwit.Location = new System.Drawing.Point(154, 85);
+            this.checkBoxSegwit.Location = new System.Drawing.Point(187, 89);
             this.checkBoxSegwit.Name = "checkBoxSegwit";
             this.checkBoxSegwit.Size = new System.Drawing.Size(58, 17);
             this.checkBoxSegwit.TabIndex = 47;
@@ -251,7 +253,7 @@
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(15, 87);
+            this.label2.Location = new System.Drawing.Point(15, 67);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(133, 13);
             this.label2.TabIndex = 46;
@@ -439,6 +441,8 @@
             // 
             // panel3
             // 
+            this.panel3.Controls.Add(this.checkBoxWIFKey);
+            this.panel3.Controls.Add(this.checkBoxHexPrivateKey);
             this.panel3.Controls.Add(this.buttonSaveAllToFile);
             this.panel3.Controls.Add(this.label5);
             this.panel3.Controls.Add(this.label4);
@@ -509,6 +513,30 @@
             this.label1.TabIndex = 36;
             this.label1.Text = "разделитель";
             // 
+            // checkBoxWIFKey
+            // 
+            this.checkBoxWIFKey.AutoSize = true;
+            this.checkBoxWIFKey.Checked = true;
+            this.checkBoxWIFKey.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.checkBoxWIFKey.Location = new System.Drawing.Point(27, 89);
+            this.checkBoxWIFKey.Name = "checkBoxWIFKey";
+            this.checkBoxWIFKey.Size = new System.Drawing.Size(67, 17);
+            this.checkBoxWIFKey.TabIndex = 61;
+            this.checkBoxWIFKey.Text = "WIF Key";
+            this.toolTip1.SetToolTip(this.checkBoxWIFKey, "Приватный ключ в формате WIF ");
+            this.checkBoxWIFKey.UseVisualStyleBackColor = true;
+            // 
+            // checkBoxHexPrivateKey
+            // 
+            this.checkBoxHexPrivateKey.AutoSize = true;
+            this.checkBoxHexPrivateKey.Location = new System.Drawing.Point(115, 89);
+            this.checkBoxHexPrivateKey.Name = "checkBoxHexPrivateKey";
+            this.checkBoxHexPrivateKey.Size = new System.Drawing.Size(66, 17);
+            this.checkBoxHexPrivateKey.TabIndex = 60;
+            this.checkBoxHexPrivateKey.Text = "Hex Key";
+            this.toolTip1.SetToolTip(this.checkBoxHexPrivateKey, "Приватный ключ в HEX формате");
+            this.checkBoxHexPrivateKey.UseVisualStyleBackColor = true;
+            // 
             // FormMain
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -578,6 +606,8 @@
         private System.Windows.Forms.Label label5;
         private System.Windows.Forms.Label label4;
         private System.Windows.Forms.NumericUpDown numericUpDownFlushEveryCount;
+        private System.Windows.Forms.CheckBox checkBoxWIFKey;
+        private System.Windows.Forms.CheckBox checkBoxHexPrivateKey;
     }
 }
 

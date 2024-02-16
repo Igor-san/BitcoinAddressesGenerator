@@ -276,10 +276,10 @@ namespace BitcoinAddressesGenerator
                 cts.Cancel();
             }
         }
-        private (string privateKeyString, string address) CreateKeyAddress(bool isCompressed, bool isSegwit, bool isSegwitP2SH, string delem)
+        private (string privateKeyString, string hex, string address) CreateKeyAddress(bool isCompressed, bool isSegwit, bool isSegwitP2SH, string delem)
         {
             var privateKey = new Key(isCompressed);
-
+       
             var bitcoinPrivateKey = privateKey.GetWif(CurrentNetwork);
             string address = bitcoinPrivateKey.GetAddress(ScriptPubKeyType.Legacy).ToString();
 
@@ -292,36 +292,61 @@ namespace BitcoinAddressesGenerator
                 address += delem + bitcoinPrivateKey.GetAddress(ScriptPubKeyType.SegwitP2SH).ToString();
             }
 
-            return (bitcoinPrivateKey.ToString(), address);
+            return (bitcoinPrivateKey.ToString(), privateKey.ToHex(), address);
         }
 
-        private string CreateKeyAddresses(bool isCompressed, bool isUnCompressed, bool isSegwit, bool isSegwitP2SH, string delem)
+        private string CreateKeyAddresses(bool isCompressed, bool isUnCompressed, bool isSegwit, bool isSegwitP2SH, string delem, string format)
         {
-            string privateKeys= "";
+            string privateKeys = "";
+            string hex = "";
             string addresses = "";
 
             if (isCompressed && isUnCompressed) //вернем с переносом в StringBuilder
             {
-                (string keys1, string addr1) = CreateKeyAddress(true, isSegwit, isSegwitP2SH, delem);
-                string s1 = String.Format("{0}{2}{1}", keys1, addr1, delem);
+                (string keys1, string hex1, string addr1) = CreateKeyAddress(true, isSegwit, isSegwitP2SH, delem);
+                string s1 = string.Format(format, keys1, hex1, addr1, delem);
 
-                (string keys2, string addr2) = CreateKeyAddress(false, isSegwit, isSegwitP2SH, delem);
-                string s2 = String.Format("{0}{2}{1}", keys2, addr2, delem);
+                (string keys2, string hex2, string addr2) = CreateKeyAddress(false, isSegwit, isSegwitP2SH, delem);
+                string s2 = string.Format(format, keys2, hex2, addr2, delem);
 
-                return s1+ "\r\n" + s2;
+                return s1 + "\r\n" + s2;
 
-            } else if (isCompressed)
+            }
+            else if (isCompressed)
             {
-                (privateKeys, addresses) = CreateKeyAddress(true, isSegwit, isSegwitP2SH, delem);
+                (privateKeys, hex, addresses) = CreateKeyAddress(true, isSegwit, isSegwitP2SH, delem);
 
 
-            } else
+            }
+            else
             {
-                (privateKeys, addresses) = CreateKeyAddress(false, isSegwit, isSegwitP2SH, delem);
+                (privateKeys, hex, addresses) = CreateKeyAddress(false, isSegwit, isSegwitP2SH, delem);
             }
 
-            return String.Format("{0}{2}{1}", privateKeys, addresses, delem);
 
+            return string.Format(format, privateKeys, hex, addresses, delem);
+
+        }
+
+        private string GetOutputFormat()
+        {
+            string format = "{0}{3}{1}{3}{2}";
+            //0 - private key, 1 - Hex Private Key, 2 - addresses, 3- delimitator, 
+            var WIFKey = checkBoxWIFKey.Checked;
+            var HexPrivateKey = checkBoxHexPrivateKey.Checked;
+            //var Segwit = checkBoxSegwit.Checked;
+            //var SegwitP2SH = checkBoxSegwitP2SH.Checked;
+
+            if (!WIFKey)
+            {
+                format = format.Replace("{0}{3}", "");
+            }
+            if (!HexPrivateKey)
+            {
+                format = format.Replace("{1}{3}", "");
+            }
+
+            return format;
         }
         private void buttonGenerateRandom_Click(object sender, EventArgs e)
         {
@@ -366,7 +391,7 @@ namespace BitcoinAddressesGenerator
                     isCompressed = true;
                 }
 
-
+                string format = GetOutputFormat();
                 cts = new CancellationTokenSource();
                 ParallelOptions po = new ParallelOptions()
                 {
@@ -381,7 +406,7 @@ namespace BitcoinAddressesGenerator
                     {
                         RandomUtils.AddEntropy(RandomString(100));
 
-                        string stroke = CreateKeyAddresses(isCompressed: isCompressed, isUnCompressed: isUnCompressed, isSegwit: segwit, isSegwitP2SH: segwitP2SH, delem: delem);
+                        string stroke = CreateKeyAddresses(isCompressed: isCompressed, isUnCompressed: isUnCompressed, isSegwit: segwit, isSegwitP2SH: segwitP2SH, delem: delem, format: format);
 
                         lock (sb)
                         {
@@ -487,6 +512,7 @@ namespace BitcoinAddressesGenerator
                 ProgressBarCounter = 0;
                 timerThread.Start();
 
+                string format = GetOutputFormat();
                 cts = new CancellationTokenSource();
                 ParallelOptions po = new ParallelOptions()
                 {
@@ -503,7 +529,7 @@ namespace BitcoinAddressesGenerator
                         {
                             RandomUtils.AddEntropy(line.Trim());
 
-                            string stroke = CreateKeyAddresses(isCompressed: isCompressed, isUnCompressed: isUnCompressed, isSegwit: segwit, isSegwitP2SH: segwitP2SH, delem: delem);
+                            string stroke = CreateKeyAddresses(isCompressed: isCompressed, isUnCompressed: isUnCompressed, isSegwit: segwit, isSegwitP2SH: segwitP2SH, delem: delem, format: format);
 
                             lock (sb)
                             {
